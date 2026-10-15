@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+:root {
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: #f1f5f9;
+}
+
+input[type='range'] {
+  accent-color: #4f46e5;
+}
