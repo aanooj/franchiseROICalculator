@@ -9,9 +9,10 @@ interface SliderProps {
   onChange: (v: number) => void
   format?: (v: number) => string
   hint?: string
+  tip?: string
 }
 
-export default function Slider({ label, value, min, max, step = 1, onChange, format, hint }: SliderProps) {
+export default function Slider({ label, value, min, max, step = 1, onChange, format, hint, tip }: SliderProps) {
   const [text, setText] = useState(String(value))
   const [lastValue, setLastValue] = useState(value)
 
@@ -26,7 +27,17 @@ export default function Slider({ label, value, min, max, step = 1, onChange, for
   return (
     <div className="py-2">
       <div className="flex items-baseline justify-between gap-3">
-        <label className="text-sm font-medium text-slate-700">{label}</label>
+        <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+          {label}
+          {tip && (
+            <span className="group relative inline-flex">
+              <span className="cursor-help text-xs text-slate-400 hover:text-indigo-500">ⓘ</span>
+              <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 hidden w-60 -translate-x-1/2 rounded-md bg-slate-800 px-2.5 py-1.5 text-xs font-normal leading-snug text-white shadow-lg group-hover:block">
+                {tip}
+              </span>
+            </span>
+          )}
+        </label>
         <span className="flex items-center gap-2">
           <input
             type="number"
