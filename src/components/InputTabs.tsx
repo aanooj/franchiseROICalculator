@@ -40,11 +40,29 @@ export function FacilityTab({ inputs, set, r }: TabProps) {
 }
 
 export function EnrollmentTab({ inputs, set, r }: TabProps) {
+  const randomize = () => {
+    set(
+      'rooms',
+      inputs.rooms.map((room) => ({
+        ...room,
+        enrolled: Math.floor(Math.random() * (room.capacity + 1)),
+      })),
+    )
+  }
+
   return (
     <div>
-      <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">
-        Room-by-Room Student Mix
-      </h4>
+      <div className="mb-1 flex items-center justify-between">
+        <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">
+          Room-by-Room Student Mix
+        </h4>
+        <button
+          onClick={randomize}
+          className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
+        >
+          🎲 Randomize mix
+        </button>
+      </div>
       <div className="grid gap-x-10 md:grid-cols-2">
         {inputs.rooms.map((room, i) => {
           const st = r.staffing[i]
