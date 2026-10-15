@@ -1,5 +1,5 @@
 import Slider from './Slider'
-import { fmt, type Inputs, type Results } from '../lib/engine'
+import { calculate, fmt, type Inputs, type Results } from '../lib/engine'
 
 const money = (v: number) => fmt(v)
 const pct = (v: number) => `${v}%`
@@ -39,7 +39,33 @@ export function FacilityTab({ inputs, set, r }: TabProps) {
   )
 }
 
+const MIX_PRESETS: { name: string; note: string; enrolled: number[] }[] = [
+  {
+    name: 'Margin-optimized (older-heavy)',
+    note: 'Maxes preschool/KG/school-age — high-ratio rooms need fewer staff per child',
+    enrolled: [4, 8, 38, 49, 46],
+  },
+  {
+    name: 'Balanced full-house',
+    note: 'Spec default — every room near capacity',
+    enrolled: [11, 14, 38, 45, 35],
+  },
+  {
+    name: 'Lean older mix',
+    note: 'Thin infant/toddler rooms, solid older groups — slow but survivable',
+    enrolled: [4, 6, 30, 40, 30],
+  },
+  {
+    name: 'Infant & toddler heavy',
+    note: 'Worst case — low-ratio rooms burn payroll before tuition covers it',
+    enrolled: [11, 14, 15, 15, 15],
+  },
+]
+
 export function EnrollmentTab({ inputs, set, r }: TabProps) {
+  const applyMix = (enrolled: number[]) =>
+    set('rooms', inputs.rooms.map((rm, i) => ({ ...rm, enrolled: enrolled[i] })))
+
   const randomize = () => {
     set(
       'rooms',
@@ -50,19 +76,69 @@ export function EnrollmentTab({ inputs, set, r }: TabProps) {
     )
   }
 
+  const isActive = (enrolled: number[]) =>
+    inputs.rooms.every((rm, i) => rm.enrolled === enrolled[i])
+
+  const presetStats = (enrolled: number[]) => {
+    const res = calculate({
+      ...inputs,
+      rooms: inputs.rooms.map((rm, i) => ({ ...rm, enrolled: enrolled[i] })),
+    })
+    return res
+  }
+
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between">
-        <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-          Room-by-Room Student Mix
-        </h4>
-        <button
-          onClick={randomize}
-          className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
-        >
-          🎲 Randomize mix
-        </button>
+      <div className="mb-2">
+        <div className="mb-1 flex items-center justify-between">
+          <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">
+            Mix Presets — best → worst
+          </h4>
+          <button
+            onClick={randomize}
+            className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
+          >
+            🎲 Randomize mix
+          </button>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {MIX_PRESETS.map((p) => {
+            const res = presetStats(p.enrolled)
+            const positive = res.monthlyNet >= 0
+            return (
+              <button
+                key={p.name}
+                onClick={() => applyMix(p.enrolled)}
+                title={p.note}
+                className={`rounded-lg border p-2.5 text-left transition-colors ${
+                  isActive(p.enrolled)
+                    ? 'border-indigo-500 bg-indigo-50'
+                    : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-slate-800">{p.name}</span>
+                  <span
+                    className={`whitespace-nowrap text-xs font-bold tabular-nums ${
+                      positive ? 'text-emerald-600' : 'text-red-600'
+                    }`}
+                  >
+                    {positive ? '+' : ''}
+                    {fmt(res.monthlyNet)}/mo
+                  </span>
+                </div>
+                <div className="mt-0.5 text-xs text-slate-500">
+                  {p.note} · {res.totalEnrolled} kids ·{' '}
+                  {res.breakEvenMonth ? `break-even mo ${res.breakEvenMonth}` : 'never profitable'}
+                </div>
+              </button>
+            )
+          })}
+        </div>
       </div>
+      <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">
+        Room-by-Room Student Mix
+      </h4>
       <div className="grid gap-x-10 md:grid-cols-2">
         {inputs.rooms.map((room, i) => {
           const st = r.staffing[i]
