@@ -15,6 +15,7 @@ export interface Inputs {
   squareFootage: number
   grossRentPerSqFt: number // $/sq ft/year, rent + TMI
   utilitiesPerSqFt: number // $/sq ft/year
+  targetMaxCapacity: number // target maximum children (120–143 per layout)
   rooms: RoomInput[]
   additionalProgramsRevenue: number // weekend/summer programs, $/month
 
@@ -68,6 +69,7 @@ export const DEFAULT_INPUTS: Inputs = {
   squareFootage: 10000,
   grossRentPerSqFt: 34,
   utilitiesPerSqFt: 3,
+  targetMaxCapacity: 120,
   rooms: [
     { ...ROOM_PRESETS[0], enrolled: 11, tuition: 1800 },
     { ...ROOM_PRESETS[1], enrolled: 14, tuition: 1800 },

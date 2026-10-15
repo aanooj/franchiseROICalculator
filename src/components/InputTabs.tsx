@@ -21,6 +21,9 @@ export function FacilityTab({ inputs, set, r }: TabProps) {
           onChange={(v) => set('grossRentPerSqFt', v)} format={(v) => `$${v.toFixed(2)}`} hint="GTA childcare/industrial gross rent typically $28–$40" />
         <Slider label="Utilities & Maintenance (per sq ft / yr)" value={inputs.utilitiesPerSqFt} min={1} max={6} step={0.25}
           onChange={(v) => set('utilitiesPerSqFt', v)} format={(v) => `$${v.toFixed(2)}`} />
+        <Slider label="Target Maximum Capacity" value={inputs.targetMaxCapacity} min={60} max={158}
+          onChange={(v) => set('targetMaxCapacity', v)} format={(v) => `${v} children`}
+          hint="Spec range 120–143 depending on room layout — presets in Enrollment Mix scale to this cap" />
         <Slider label="Weekend / Summer Program Revenue" value={inputs.additionalProgramsRevenue} min={0} max={20000} step={500}
           onChange={(v) => set('additionalProgramsRevenue', v)} format={(v) => `${money(v)}/mo`} />
       </div>
@@ -63,43 +66,71 @@ const MIX_PRESETS: { name: string; note: string; enrolled: number[] }[] = [
 ]
 
 export function EnrollmentTab({ inputs, set, r }: TabProps) {
-  const applyMix = (enrolled: number[]) =>
-    set('rooms', inputs.rooms.map((rm, i) => ({ ...rm, enrolled: enrolled[i] })))
-
-  const randomize = () => {
-    set(
-      'rooms',
-      inputs.rooms.map((room) => ({
-        ...room,
-        enrolled: Math.floor(Math.random() * (room.capacity + 1)),
-      })),
+  // scale a preset's room counts so the total stays within targetMaxCapacity
+  const scaledMix = (enrolled: number[]): number[] => {
+    const total = enrolled.reduce((s, n) => s + n, 0)
+    const factor = Math.min(1, inputs.targetMaxCapacity / Math.max(total, 1))
+    return enrolled.map((n, i) =>
+      Math.min(inputs.rooms[i].capacity, Math.floor(n * factor)),
     )
   }
 
-  const isActive = (enrolled: number[]) =>
-    inputs.rooms.every((rm, i) => rm.enrolled === enrolled[i])
+  const applyMix = (enrolled: number[]) => {
+    const scaled = scaledMix(enrolled)
+    set('rooms', inputs.rooms.map((rm, i) => ({ ...rm, enrolled: scaled[i] })))
+  }
+
+  const randomize = () => {
+    // random rooms, then rescale the whole mix to the target cap
+    const raw = inputs.rooms.map((room) =>
+      Math.floor(Math.random() * (room.capacity + 1)),
+    )
+    const scaled = scaledMix(raw)
+    set('rooms', inputs.rooms.map((rm, i) => ({ ...rm, enrolled: scaled[i] })))
+  }
+
+  const isActive = (enrolled: number[]) => {
+    const scaled = scaledMix(enrolled)
+    return inputs.rooms.every((rm, i) => rm.enrolled === scaled[i])
+  }
 
   const presetStats = (enrolled: number[]) => {
-    const res = calculate({
+    const scaled = scaledMix(enrolled)
+    return calculate({
       ...inputs,
-      rooms: inputs.rooms.map((rm, i) => ({ ...rm, enrolled: enrolled[i] })),
+      rooms: inputs.rooms.map((rm, i) => ({ ...rm, enrolled: scaled[i] })),
     })
-    return res
   }
 
   return (
     <div>
       <div className="mb-2">
-        <div className="mb-1 flex items-center justify-between">
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">
             Mix Presets — best → worst
           </h4>
-          <button
-            onClick={randomize}
-            className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
-          >
-            🎲 Randomize mix
-          </button>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-500">
+              Max children:{' '}
+              <select
+                className="rounded-md border border-slate-300 px-1.5 py-1 text-xs font-semibold text-indigo-700"
+                value={inputs.targetMaxCapacity}
+                onChange={(e) => set('targetMaxCapacity', Number(e.target.value))}
+              >
+                {[100, 110, 120, 130, 143, 158].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              onClick={randomize}
+              className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
+            >
+              🎲 Randomize mix
+            </button>
+          </div>
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
           {MIX_PRESETS.map((p) => {
