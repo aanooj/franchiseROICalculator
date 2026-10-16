@@ -1,5 +1,5 @@
 import Slider from './Slider'
-import { calculate, fmt, FRANCHISE_PRESETS, type FranchisePreset, type Inputs, type Results } from '../lib/engine'
+import { calculate, fmt, FRANCHISE_PRESETS, scaleMixToCap, type FranchisePreset, type Inputs, type Results } from '../lib/engine'
 
 const money = (v: number) => fmt(v)
 const pct = (v: number) => `${v}%`
@@ -72,13 +72,8 @@ const MIX_PRESETS: { name: string; note: string; enrolled: number[] }[] = [
 
 export function EnrollmentTab({ inputs, set, r }: TabProps) {
   // scale a preset's room counts so the total stays within targetMaxCapacity
-  const scaledMix = (enrolled: number[]): number[] => {
-    const total = enrolled.reduce((s, n) => s + n, 0)
-    const factor = Math.min(1, inputs.targetMaxCapacity / Math.max(total, 1))
-    return enrolled.map((n, i) =>
-      Math.min(inputs.rooms[i].capacity, Math.floor(n * factor)),
-    )
-  }
+  const scaledMix = (enrolled: number[]): number[] =>
+    scaleMixToCap(enrolled, inputs.rooms, inputs.targetMaxCapacity)
 
   const applyMix = (enrolled: number[]) => {
     const scaled = scaledMix(enrolled)
@@ -289,7 +284,7 @@ export function CapitalTab({ inputs, set, r }: TabProps) {
             set('totalInvestment', v)
             if (inputs.franchisePreset !== 'custom') set('franchisePreset', 'custom')
           }} format={money}
-          hint="~$2.5M CEFA-scale build · ~$1.2M boutique"
+          hint="CEFA ~$1.9–3.9M · Maple Bear $0.85–2.5M (call: $1.5M typical)"
           tip="Everything it takes to open: build-out/renovations, franchise fee, furniture & equipment, licensing and working-capital cushion." />
         <Slider label="Debt Share (CSBFP / bank)" value={inputs.debtPercent} min={0} max={90} step={5}
           onChange={(v) => set('debtPercent', v)} format={pct}
@@ -339,6 +334,25 @@ export function CostsTab({ inputs, set, r }: TabProps) {
     set('brandFundPercent', p.brandFundPercent)
     set('localMarketingPercent', p.localMarketingPercent)
     set('totalInvestment', p.totalInvestment)
+    // brand's site profile, where published/quoted
+    const cap = p.targetMaxCapacity ?? inputs.targetMaxCapacity
+    if (p.squareFootage !== undefined) set('squareFootage', p.squareFootage)
+    if (p.targetMaxCapacity !== undefined) set('targetMaxCapacity', p.targetMaxCapacity)
+    if (p.debtPercent !== undefined) set('debtPercent', p.debtPercent)
+    if (p.preOpeningBurn !== undefined) set('preOpeningBurn', p.preOpeningBurn)
+    if (p.mix !== undefined || p.tuition !== undefined) {
+      const scaled = p.mix
+        ? scaleMixToCap(p.mix, inputs.rooms, cap)
+        : inputs.rooms.map((rm) => rm.enrolled)
+      set(
+        'rooms',
+        inputs.rooms.map((rm, i) => ({
+          ...rm,
+          enrolled: scaled[i],
+          tuition: p.tuition !== undefined ? p.tuition : rm.tuition,
+        })),
+      )
+    }
     set('franchisePreset', preset)
   }
 

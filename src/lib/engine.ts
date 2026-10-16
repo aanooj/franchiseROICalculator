@@ -68,9 +68,22 @@ export const ROOM_PRESETS: Omit<RoomInput, 'enrolled' | 'tuition'>[] = [
   { id: 'schoolage', label: 'School Age Rooms (Jr & Sr)', capacity: 46, ratio: 15 },
 ]
 
-// Published franchise profiles (FDD figures) — loaded by the Franchise dropdown.
-// Selecting one overwrites the fee fields + totalInvestment; everything else stays
-// identical so the comparison is apples-to-apples.
+// Scale an enrolment mix so its total stays within the capacity cap.
+export function scaleMixToCap(
+  mix: number[],
+  rooms: { capacity: number }[],
+  cap: number,
+): number[] {
+  const total = mix.reduce((s, n) => s + n, 0)
+  const factor = Math.min(1, cap / Math.max(total, 1))
+  return mix.map((n, i) => Math.min(rooms[i].capacity, Math.floor(n * factor)))
+}
+
+// Published franchise profiles — loaded by the Franchise dropdown. Beyond the
+// fee fields, each brand can carry an optional site profile (facility size,
+// capacity benchmark, tuition, financing split, pre-open burn) gathered from
+// its FDD or direct franchisor calls. Editing a fee field or totalInvestment
+// afterwards flips the selector back to Custom.
 export const FRANCHISE_PRESETS: Record<
   Exclude<FranchisePreset, 'custom'>,
   {
@@ -82,6 +95,13 @@ export const FRANCHISE_PRESETS: Record<
     totalInvestment: number // brand-typical build cost
     investmentRange: string
     note: string
+    // optional site profile applied on selection
+    squareFootage?: number
+    targetMaxCapacity?: number
+    tuition?: number // flat $/child/mo applied to every room
+    mix?: number[] // per-room enrolled, scaled to targetMaxCapacity
+    debtPercent?: number
+    preOpeningBurn?: number
   }
 > = {
   cefa: {
@@ -93,16 +113,24 @@ export const FRANCHISE_PRESETS: Record<
     totalInvestment: 2750000,
     investmentRange: '$1.9M–$3.9M',
     note: '2026 FDD: $70k fee, 7% royalty, 2.5% brand fund, 1% local mktg (min $3k/mo yr 1). Facilities spec\'d at 10–15k sq ft.',
+    squareFootage: 12000,
+    targetMaxCapacity: 143,
   },
   maplebear: {
     name: 'Maple Bear',
-    franchiseFee: 85000,
-    royaltyPercent: 6,
+    franchiseFee: 80000,
+    royaltyPercent: 8,
     brandFundPercent: 2,
     localMarketingPercent: 1,
-    totalInvestment: 1600000,
-    investmentRange: '$0.8M–$2.4M',
-    note: '2025 FDD: $85k fee, 6% royalty, 2% ad fund, min 1% local advertising. Lighter build-out than CEFA.',
+    totalInvestment: 1500000,
+    investmentRange: '$0.85M–$2.5M',
+    note: 'Oct 2026 call with Maple Bear Canada dev team: $80k Ontario fee, 8% royalty + 2% national fund, 1% local mktg expected. Build $850k (retrofit)–$2.5M (full build); their example $1.5M ≈ $500k equity + ~$1M bank (first $500k via CSBFP, 90% gov-guaranteed). Benchmark 90–120 kids in 5–10k sq ft, tuition target $1.8–2k/mo, labour ~40% of revenue, franchisor target margin 20–22%. Pre-open marketing/recruiting 3–12 mos; add-on revenue via uniforms, food program, transport.',
+    squareFootage: 8000,
+    targetMaxCapacity: 120,
+    tuition: 1900,
+    mix: [11, 14, 38, 45, 35],
+    debtPercent: 65,
+    preOpeningBurn: 20000,
   },
 }
 
