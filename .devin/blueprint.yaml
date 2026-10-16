@@ -1,0 +1,19 @@
+# Devin environment blueprint — https://docs.devin.ai/onboard-devin/environment-yaml
+# Vite + React + TS app — only deps need installing.
+maintenance: |
+  npm install
+
+knowledge:
+  - name: build
+    contents: |
+      npm run build   # tsc + vite build → dist/
+  - name: lint
+    contents: |
+      npx oxlint src
+  - name: dev
+    contents: |
+      npm run dev -- --host 0.0.0.0 --port 5173   # preview on port 5173
+  - name: notes
+    contents: |
+      No backend, env vars, or DB — pure client-side calculator.
+      Deploys as a static Vite site on Vercel (build: npm run build, output: dist).
