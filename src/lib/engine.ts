@@ -1,6 +1,8 @@
 // GTA Childcare Franchise ROI & Operational Calculator — calculation engine.
 // All dollar values are CAD. Ratios follow the Ontario CCEYA.
 
+export type FranchisePreset = 'cefa' | 'maplebear' | 'custom'
+
 export interface RoomInput {
   id: string
   label: string
@@ -35,6 +37,7 @@ export interface Inputs {
   royaltyPercent: number // of gross revenue
   brandFundPercent: number
   localMarketingPercent: number
+  franchisePreset: FranchisePreset // which brand's fee profile is loaded
 
   // Capital & partners
   totalInvestment: number
@@ -65,6 +68,44 @@ export const ROOM_PRESETS: Omit<RoomInput, 'enrolled' | 'tuition'>[] = [
   { id: 'schoolage', label: 'School Age Rooms (Jr & Sr)', capacity: 46, ratio: 15 },
 ]
 
+// Published franchise profiles (FDD figures) — loaded by the Franchise dropdown.
+// Selecting one overwrites the fee fields + totalInvestment; everything else stays
+// identical so the comparison is apples-to-apples.
+export const FRANCHISE_PRESETS: Record<
+  Exclude<FranchisePreset, 'custom'>,
+  {
+    name: string
+    franchiseFee: number // one-time initial fee, folded into totalInvestment
+    royaltyPercent: number
+    brandFundPercent: number
+    localMarketingPercent: number
+    totalInvestment: number // brand-typical build cost
+    investmentRange: string
+    note: string
+  }
+> = {
+  cefa: {
+    name: 'CEFA Early Learning',
+    franchiseFee: 70000,
+    royaltyPercent: 7,
+    brandFundPercent: 2.5,
+    localMarketingPercent: 1,
+    totalInvestment: 2750000,
+    investmentRange: '$1.9M–$3.9M',
+    note: '2026 FDD: $70k fee, 7% royalty, 2.5% brand fund, 1% local mktg (min $3k/mo yr 1). Facilities spec\'d at 10–15k sq ft.',
+  },
+  maplebear: {
+    name: 'Maple Bear',
+    franchiseFee: 85000,
+    royaltyPercent: 6,
+    brandFundPercent: 2,
+    localMarketingPercent: 1,
+    totalInvestment: 1600000,
+    investmentRange: '$0.8M–$2.4M',
+    note: '2025 FDD: $85k fee, 6% royalty, 2% ad fund, min 1% local advertising. Lighter build-out than CEFA.',
+  },
+}
+
 export const DEFAULT_INPUTS: Inputs = {
   squareFootage: 10000,
   grossRentPerSqFt: 34,
@@ -93,6 +134,7 @@ export const DEFAULT_INPUTS: Inputs = {
   royaltyPercent: 7,
   brandFundPercent: 2.5,
   localMarketingPercent: 1,
+  franchisePreset: 'cefa',
 
   totalInvestment: 2500000,
   debtPercent: 70,

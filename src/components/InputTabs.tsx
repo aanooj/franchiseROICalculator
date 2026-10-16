@@ -1,5 +1,5 @@
 import Slider from './Slider'
-import { calculate, fmt, type Inputs, type Results } from '../lib/engine'
+import { calculate, fmt, FRANCHISE_PRESETS, type FranchisePreset, type Inputs, type Results } from '../lib/engine'
 
 const money = (v: number) => fmt(v)
 const pct = (v: number) => `${v}%`
@@ -285,7 +285,10 @@ export function CapitalTab({ inputs, set, r }: TabProps) {
       <div>
         <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Financing</h4>
         <Slider label="Total Initial Investment / Build-out" value={inputs.totalInvestment} min={400000} max={5000000} step={50000}
-          onChange={(v) => set('totalInvestment', v)} format={money}
+          onChange={(v) => {
+            set('totalInvestment', v)
+            if (inputs.franchisePreset !== 'custom') set('franchisePreset', 'custom')
+          }} format={money}
           hint="~$2.5M CEFA-scale build · ~$1.2M boutique"
           tip="Everything it takes to open: build-out/renovations, franchise fee, furniture & equipment, licensing and working-capital cushion." />
         <Slider label="Debt Share (CSBFP / bank)" value={inputs.debtPercent} min={0} max={90} step={5}
@@ -325,18 +328,61 @@ export function CapitalTab({ inputs, set, r }: TabProps) {
 
 export function CostsTab({ inputs, set, r }: TabProps) {
   const feeTotal = inputs.royaltyPercent + inputs.brandFundPercent + inputs.localMarketingPercent
+
+  const applyFranchise = (preset: FranchisePreset) => {
+    if (preset === 'custom') {
+      set('franchisePreset', 'custom')
+      return
+    }
+    const p = FRANCHISE_PRESETS[preset]
+    set('royaltyPercent', p.royaltyPercent)
+    set('brandFundPercent', p.brandFundPercent)
+    set('localMarketingPercent', p.localMarketingPercent)
+    set('totalInvestment', p.totalInvestment)
+    set('franchisePreset', preset)
+  }
+
+  const editingFee = <K extends keyof Inputs>(k: K, v: Inputs[K]) => {
+    set(k, v)
+    if (inputs.franchisePreset !== 'custom') set('franchisePreset', 'custom')
+  }
+
+  const presetInfo =
+    inputs.franchisePreset !== 'custom' ? FRANCHISE_PRESETS[inputs.franchisePreset] : null
+
   return (
     <div className="grid gap-x-10 md:grid-cols-2">
       <div>
         <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Franchise Fees</h4>
+        <label className="mb-1 flex items-center gap-2 text-sm font-medium text-slate-700">
+          Franchise:
+          <select
+            className="rounded-md border border-slate-300 px-2 py-1 text-sm font-semibold text-indigo-700"
+            value={inputs.franchisePreset}
+            onChange={(e) => applyFranchise(e.target.value as FranchisePreset)}
+          >
+            <option value="cefa">CEFA Early Learning</option>
+            <option value="maplebear">Maple Bear</option>
+            <option value="custom">Custom (manual)</option>
+          </select>
+        </label>
+        {presetInfo && (
+          <div className="mb-2 rounded-lg bg-indigo-50 p-2.5 text-xs text-indigo-900">
+            <b>{presetInfo.name}</b> — fee {money(presetInfo.franchiseFee)} (inside investment),
+            royalty {presetInfo.royaltyPercent}% + brand fund {presetInfo.brandFundPercent}% +
+            local mktg {presetInfo.localMarketingPercent}%, typical build{' '}
+            {presetInfo.investmentRange}.<br />
+            {presetInfo.note}
+          </div>
+        )}
         <Slider label="Royalty" value={inputs.royaltyPercent} min={0} max={15} step={0.5}
-          onChange={(v) => set('royaltyPercent', v)} format={pct}
+          onChange={(v) => editingFee('royaltyPercent', v)} format={pct}
           tip="Franchise royalty paid to the franchisor as a % of gross revenue — childcare franchises typically run 5–8%." />
         <Slider label="Brand Fund" value={inputs.brandFundPercent} min={0} max={8} step={0.5}
-          onChange={(v) => set('brandFundPercent', v)} format={pct}
+          onChange={(v) => editingFee('brandFundPercent', v)} format={pct}
           tip="Contribution to the franchisor's national brand/marketing fund, as a % of gross revenue." />
         <Slider label="Local Marketing" value={inputs.localMarketingPercent} min={0} max={8} step={0.5}
-          onChange={(v) => set('localMarketingPercent', v)} format={pct}
+          onChange={(v) => editingFee('localMarketingPercent', v)} format={pct}
           hint={`Total fee load ${feeTotal}% of gross → ${money(r.franchiseFees)}/mo`}
           tip="Required local advertising spend you control, as a % of gross revenue." />
       </div>
