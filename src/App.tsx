@@ -16,6 +16,7 @@ const TABS = [
 export default function App() {
   const [inputs, setInputs] = useState<Inputs>(DEFAULT_INPUTS)
   const [tab, setTab] = useState<string>('facility')
+  const [open, setOpen] = useState<boolean>(() => window.innerWidth >= 1024)
   const results = useMemo(() => calculate(inputs), [inputs])
 
   const set = <K extends keyof Inputs>(k: K, v: Inputs[K]) =>
@@ -24,52 +25,104 @@ export default function App() {
   const Active = TABS.find((t) => t.id === tab)!.C
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
-      <header className="mb-4">
-        <h1 className="text-2xl font-extrabold text-slate-800">
-          GTA Childcare Franchise ROI &amp; Operational Calculator
-        </h1>
-        <p className="text-sm text-slate-500">
-          CCEYA-compliant staffing, financing, and ramp-up model — every slider updates the model instantly.
-        </p>
-      </header>
+    <div className="min-h-screen">
+      <main
+        className={`px-4 py-6 transition-[padding] duration-300 ${
+          open ? 'lg:pr-[672px]' : ''
+        }`}
+      >
+        <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-extrabold text-slate-800">
+              GTA Childcare Franchise ROI &amp; Operational Calculator
+            </h1>
+            <p className="text-sm text-slate-500">
+              CCEYA-compliant staffing, financing, and ramp-up model — every slider updates the model instantly.
+            </p>
+          </div>
+          {!open && (
+            <button
+              onClick={() => setOpen(true)}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow hover:bg-indigo-700"
+            >
+              ⚙ Edit inputs
+            </button>
+          )}
+        </header>
 
-      <Dashboard r={results} />
+        <Dashboard r={results} />
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <EnrollmentStaffingChart r={results} />
-        <CashFlowChart r={results} />
-      </div>
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <EnrollmentStaffingChart r={results} />
+          <CashFlowChart r={results} />
+        </div>
 
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-white shadow">
-        <div className="flex flex-wrap gap-1 border-b border-slate-200 p-2">
+        <footer className="mt-6 text-center text-xs text-slate-400">
+          Ratios per Ontario Child Care and Early Years Act (infant 1:3, toddler 1:5, preschool 1:8,
+          kindergarten 1:13, school-age 1:15). Figures are estimates for planning only.
+        </footer>
+      </main>
+
+      {/* floating handle when the panel is closed */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed right-0 top-1/3 z-40 rounded-l-xl bg-indigo-600 px-3 py-4 text-sm font-bold text-white shadow-lg hover:bg-indigo-700"
+          aria-label="Open inputs panel"
+        >
+          ⚙<br />I<br />n<br />p<br />u<br />t<br />s
+        </button>
+      )}
+
+      {/* backdrop on small screens where the drawer overlays */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* right slide-out inputs panel */}
+      <aside
+        className={`fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-slate-200 bg-white shadow-2xl transition-transform duration-300 sm:w-[560px] lg:w-[640px] ${
+          open ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-slate-600">Inputs</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setInputs(DEFAULT_INPUTS)}
+              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-100"
+            >
+              Reset defaults
+            </button>
+            <button
+              onClick={() => setOpen(false)}
+              className="rounded-lg px-3 py-1.5 text-sm font-bold text-slate-500 hover:bg-slate-100"
+              aria-label="Close inputs panel"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+        <div className="flex gap-1 overflow-x-auto border-b border-slate-200 p-2">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+              className={`whitespace-nowrap rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
                 tab === t.id ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
               {t.label}
             </button>
           ))}
-          <button
-            onClick={() => setInputs(DEFAULT_INPUTS)}
-            className="ml-auto rounded-lg px-3 py-2 text-sm font-semibold text-slate-400 hover:bg-slate-100"
-          >
-            Reset defaults
-          </button>
         </div>
-        <div className="p-4">
+        <div className="flex-1 overflow-y-auto p-4">
           <Active inputs={inputs} set={set} r={results} />
         </div>
-      </div>
-
-      <footer className="mt-6 text-center text-xs text-slate-400">
-        Ratios per Ontario Child Care and Early Years Act (infant 1:3, toddler 1:5, preschool 1:8,
-        kindergarten 1:13, school-age 1:15). Figures are estimates for planning only.
-      </footer>
+      </aside>
     </div>
   )
 }

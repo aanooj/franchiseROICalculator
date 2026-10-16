@@ -12,7 +12,7 @@ interface TabProps {
 
 export function FacilityTab({ inputs, set, r }: TabProps) {
   return (
-    <div className="grid gap-x-10 md:grid-cols-2">
+    <div className="grid gap-y-2">
       <div>
         <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Facility</h4>
         <Slider label="Total Facility Square Footage" value={inputs.squareFootage} min={3000} max={20000} step={250}
@@ -170,7 +170,7 @@ export function EnrollmentTab({ inputs, set, r }: TabProps) {
       <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">
         Room-by-Room Student Mix
       </h4>
-      <div className="grid gap-x-10 md:grid-cols-2">
+      <div className="grid gap-y-2">
         {inputs.rooms.map((room, i) => {
           const st = r.staffing[i]
           return (
@@ -211,7 +211,7 @@ export function EnrollmentTab({ inputs, set, r }: TabProps) {
 
 export function StaffingTab({ inputs, set, r }: TabProps) {
   return (
-    <div className="grid gap-x-10 md:grid-cols-2">
+    <div className="grid gap-y-2">
       <div>
         <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Wages</h4>
         <Slider label="Base RECE Hourly Wage Floor" value={inputs.receHourlyWage} min={18} max={45} step={0.25}
@@ -276,7 +276,7 @@ export function StaffingTab({ inputs, set, r }: TabProps) {
 
 export function CapitalTab({ inputs, set, r }: TabProps) {
   return (
-    <div className="grid gap-x-10 md:grid-cols-2">
+    <div className="grid gap-y-2">
       <div>
         <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Financing</h4>
         <Slider label="Total Initial Investment / Build-out" value={inputs.totalInvestment} min={400000} max={5000000} step={50000}
@@ -365,7 +365,7 @@ export function CostsTab({ inputs, set, r }: TabProps) {
     inputs.franchisePreset !== 'custom' ? FRANCHISE_PRESETS[inputs.franchisePreset] : null
 
   return (
-    <div className="grid gap-x-10 md:grid-cols-2">
+    <div className="grid gap-y-2">
       <div>
         <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Franchise Fees</h4>
         <label className="mb-1 flex items-center gap-2 text-sm font-medium text-slate-700">
@@ -421,7 +421,7 @@ export function CostsTab({ inputs, set, r }: TabProps) {
 
 export function ScenariosTab({ inputs, set, r }: TabProps) {
   return (
-    <div className="grid gap-x-10 md:grid-cols-2">
+    <div className="grid gap-y-2">
       <div>
         <h4 className="mb-1 text-xs font-bold uppercase tracking-wide text-slate-500">Stress Tests</h4>
         <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-3">
